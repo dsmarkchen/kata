@@ -26,34 +26,41 @@ void setup();
 @<main@>+=
 int main(int argc, char* argv[])
 {
-   RUN_TEST(mytest, simple_test_harness);
-   RUN_TEST(mytest, test_given_i_returns_1);
-   RUN_TEST(mytest, test_given_ii_returns_2);
-   RUN_TEST(mytest, test_given_iii_returns_3);
-   RUN_TEST(mytest, test_given_iv_returns_4);
-   RUN_TEST(mytest, test_given_v_returns_5);
-   RUN_TEST(mytest, test_given_vi_returns_6);
-   RUN_TEST(mytest, test_given_vii_returns_7);
-   RUN_TEST(mytest, test_given_viii_returns_8);
-   RUN_TEST(mytest, test_given_ix_returns_9);
-   RUN_TEST(mytest, test_given_xii_returns_12)
-   RUN_TEST(mytest, test_given_xviii_returns_18)
-   RUN_TEST(mytest, test_given_xxxix_returns_39)
-
-
+   @<c harness tests@>@; 
+   @<roman number tests@>@;
+  
    return 0;
 }
 
-@ Test.
-@<test...@>+=
+@ Test
+@<c harness tests@>+= 
+RUN_TEST(mytest, simple_test_harness);    
+
+@ @<test...@>+=
 TEST_F(mytest, simple_test_harness)
 {
    ASSERT_TRUE(1);
    ASSERT_EQ(42, 6*7);
 }
 
-@ Roman numbers
-@<test...@>+=
+
+@ Roman numbers 
+@<roman number tests@>+=
+RUN_TEST(mytest, test_given_i_returns_1);
+RUN_TEST(mytest, test_given_ii_returns_2);
+RUN_TEST(mytest, test_given_iii_returns_3);
+RUN_TEST(mytest, test_given_iv_returns_4);
+RUN_TEST(mytest, test_given_v_returns_5);
+RUN_TEST(mytest, test_given_vi_returns_6);
+RUN_TEST(mytest, test_given_vii_returns_7);
+RUN_TEST(mytest, test_given_viii_returns_8);
+RUN_TEST(mytest, test_given_ix_returns_9);
+RUN_TEST(mytest, test_given_xii_returns_12)
+RUN_TEST(mytest, test_given_xviii_returns_18)
+RUN_TEST(mytest, test_given_xxxix_returns_39)
+
+
+@ @<test...@>+=
 TEST_F(mytest, test_given_i_returns_1)
 {
     char* s = "i";
