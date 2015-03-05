@@ -58,7 +58,8 @@ RUN_TEST(mytest, test_given_ix_returns_9);
 RUN_TEST(mytest, test_given_xii_returns_12)
 RUN_TEST(mytest, test_given_xviii_returns_18)
 RUN_TEST(mytest, test_given_xxxix_returns_39)
-
+RUN_TEST(mytest, test_given_liv_returns_54)
+RUN_TEST(mytest, test_given_lxix_returns_69)
 
 @ @<test...@>+=
 TEST_F(mytest, test_given_i_returns_1)
@@ -146,10 +147,32 @@ TEST_F(mytest, test_given_xxxix_returns_39)
     ASSERT_EQ(39, r);
 }
 
+@ Test of L.
+@<test...@>+=
+TEST_F(mytest, test_given_liv_returns_54)
+{
+    char* s = "liv";
+    int r = converter(s);
+    ASSERT_EQ(54, r);
+}
+
+TEST_F(mytest, test_given_lxix_returns_69)
+{
+    char* s = "lxix";
+    int r = converter(s);
+    ASSERT_EQ(69, r);
+}
+
+
+
+
+
+
 
 
 
 @ @<rout...@>+=
+void handle_roman_ch(char* ch, int *r, int* r1, int* sub);
 int converter(char* str_in)
 {
     int r = 0;
@@ -167,24 +190,8 @@ int converter(char* str_in)
             r1 = r1+1;
             sub = 1;
         }
-        if(ch == 'v') {
-            if(sub) {
-                r = r+ 5-r1;
-                r1 = 0;
-            }
-            else 
-                r = r+5;
-            sub = 0;
-        }
-        if(ch == 'x') {
-            if(sub) {
-               r = r + 10 - r1;
-               r1 = 0;
-            }
-            else 
-               r = 10+r;
-            sub = 0;
-        }
+        handle_roman_ch(&ch, &r,&r1, &sub);
+        
         if(ch2 == 0) { 
            // printf ("### %d__%d\n",r,r1);
             return r+r1;
@@ -197,6 +204,30 @@ int converter(char* str_in)
     
 
  }
+
+@ Handle roman charactor except 'i'.
+@<rout...@>+=
+void handle_roman_ch(char* ch, int *r, int* r1, int* sub)
+{
+    int i;
+    char pattern_c[] = {'v', 'x', 'l'};
+    int  pattern_n[] = {5, 10, 50};
+    for(i=0; i<3;i++)
+    {
+        if(*ch == pattern_c[i]) {
+            if(*sub) {
+                *r = *r+ pattern_n[i]-*r1;
+                *r1 = 0;
+            }
+            else 
+                *r = *r+ pattern_n[i];
+            *sub = 0;
+
+            break;
+        }
+    }
+
+}
 
 @ Harness setup.
 @<rout...@>+= 
