@@ -3,8 +3,8 @@ Below is the overall structure of the code.
 @c
 @<macro definitions@>
 @<includes@>@;
-@<tests@>@;
 @<routines@>@;
+@<tests@>@;
 @<main@>@;
 
 
@@ -23,8 +23,10 @@ void setup();
 #include <string.h>
 
 @ main code.
+@d  UNUSED __attribute__ (( unused ))
 @<main@>+=
-int main(int argc, char* argv[])
+
+int main(int argc UNUSED, char*  argv[] UNUSED)
 {
    @<c harness tests@>@; 
    @<roman number tests@>@;
@@ -60,6 +62,8 @@ RUN_TEST(mytest, test_given_xviii_returns_18)
 RUN_TEST(mytest, test_given_xxxix_returns_39)
 RUN_TEST(mytest, test_given_liv_returns_54)
 RUN_TEST(mytest, test_given_lxix_returns_69)
+RUN_TEST(mytest, test_given_dxvii_returns_517)
+RUN_TEST(mytest, test_given_mcmxc_returns_1990)
 
 @ @<test...@>+=
 TEST_F(mytest, test_given_i_returns_1)
@@ -164,15 +168,29 @@ TEST_F(mytest, test_given_lxix_returns_69)
 }
 
 
+@ Test to 'D', 'C', 'M'.
+
+@<test...@>+=
+TEST_F(mytest, test_given_dxvii_returns_517)
+{
+    char* s = "dxvii";
+    int r = converter(s);
+    ASSERT_EQ(517, r);
+}
 
 
-
+TEST_F(mytest, test_given_mcmxc_returns_1990)
+{
+    char* s = "mcmxc";
+    int r = converter(s);
+    ASSERT_EQ(1990, r);
+}
 
 
 
 
 @ @<rout...@>+=
-void handle_roman_ch(char* ch, int *r, int* r1, int* sub);
+int handle_roman_ch(char* ch, char* ch2, int* r1 );
 int converter(char* str_in)
 {
     int r = 0;
@@ -180,53 +198,64 @@ int converter(char* str_in)
     int pos = 0;
     char ch = 0;
     char ch2 = 0;
-    int sub = 0;
-     
+    int sub = 0;     
     for(;;)
     { 
         ch = str_in[pos++];
         ch2 = str_in[pos];
-        if(ch == 'i') {
-            r1 = r1+1;
-            sub = 1;
-        }
-        handle_roman_ch(&ch, &r,&r1, &sub);
-        
-        if(ch2 == 0) { 
-           // printf ("### %d__%d\n",r,r1);
-            return r+r1;
-        }
-        
+
+        sub = handle_roman_ch(&ch, &ch2, &r1);
+
+        if(sub > 0) 
+            r = r - r1;
+        else 
+            r = r + r1;
+
+        if(ch2 == 0) break;
     } 
    
    
-    return 0;
+    return r;
     
 
  }
 
 @ Handle roman charactor except 'i'.
 @<rout...@>+=
-void handle_roman_ch(char* ch, int *r, int* r1, int* sub)
-{
-    int i;
-    char pattern_c[] = {'v', 'x', 'l'};
-    int  pattern_n[] = {5, 10, 50};
-    for(i=0; i<3;i++)
-    {
-        if(*ch == pattern_c[i]) {
-            if(*sub) {
-                *r = *r+ pattern_n[i]-*r1;
-                *r1 = 0;
-            }
-            else 
-                *r = *r+ pattern_n[i];
-            *sub = 0;
+int get(char ch);
 
+int comp(char ch, char ch2);
+int handle_roman_ch(char* ch, char* ch2, int* r1)
+{
+    int sub;
+    *r1 = get(*ch); 
+    sub = comp(*ch, *ch2);
+    return sub;
+}
+@ @<rout...@>+=
+int comp(char ch, char ch2)
+{
+    int j;
+    int k;
+    j = get(ch);
+    k = get(ch2);
+   
+    if(k > j ) return 1;
+    return 0; 
+}
+int get(char ch)
+{
+    char pattern_c[] = {'i', 'v', 'x', 'l', 'c', 'd',  'm'};
+    int  pattern_n[] = { 1,   5,   10,  50, 100, 500, 1000};
+    int j = -1;
+    int i;
+    for(i=0;i<7;i++) {
+        if(ch == pattern_c[i]){
+            j = pattern_n[i];
             break;
         }
     }
-
+    return j;
 }
 
 @ Harness setup.
