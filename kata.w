@@ -1,7 +1,7 @@
 @ This is my kata.
 Below is the overall structure of the code.
 @c
-@<macro definitions@>
+@<macro definitions@>@;
 @<includes@>@;
 @<routines@>@;
 @<tests@>@;
@@ -11,10 +11,10 @@ Below is the overall structure of the code.
 @*Test harness by c.
 @<macr...@>+=
 void setup();
-#define TEST_F(SUITE, NAME) void NAME()
-#define RUN_TEST(SUITE, TESTNAME) printf(" Running %s.%s: \n", #SUITE, #TESTNAME); setup(); TESTNAME(); printf(" SUCCESS\n");
-#define ASSERT_EQ(A, B) assert((A) == (B))
-#define ASSERT_TRUE(A) assert((A))
+#define TEST_F(@[SUITE, NAME@]) void NAME()
+#define RUN_TEST(@[SUITE, TESTNAME@]) printf(" Running %s.%s: \n", #SUITE, #TESTNAME); setup(); TESTNAME(); printf(" SUCCESS\n");
+#define ASSERT_EQ(@[A, B@]) assert((A) == (B))
+#define ASSERT_TRUE(@[A@]) assert((A))
 
 @ include header file for test harness.
 @<incl...@>+=
@@ -26,7 +26,7 @@ void setup();
 @d  UNUSED __attribute__ (( unused ))
 @<main@>+=
 
-int main(int argc UNUSED, char*  argv[] UNUSED)
+int main(int argc @, UNUSED, char*  argv[] @, UNUSED)
 {
    @<c harness tests@>@; 
    @<roman number tests@>@;
@@ -57,13 +57,13 @@ RUN_TEST(mytest, test_given_vi_returns_6);
 RUN_TEST(mytest, test_given_vii_returns_7);
 RUN_TEST(mytest, test_given_viii_returns_8);
 RUN_TEST(mytest, test_given_ix_returns_9);
-RUN_TEST(mytest, test_given_xii_returns_12)
-RUN_TEST(mytest, test_given_xviii_returns_18)
-RUN_TEST(mytest, test_given_xxxix_returns_39)
-RUN_TEST(mytest, test_given_liv_returns_54)
-RUN_TEST(mytest, test_given_lxix_returns_69)
-RUN_TEST(mytest, test_given_dxvii_returns_517)
-RUN_TEST(mytest, test_given_mcmxc_returns_1990)
+RUN_TEST(mytest, test_given_xii_returns_12);
+RUN_TEST(mytest, test_given_xviii_returns_18);
+RUN_TEST(mytest, test_given_xxxix_returns_39);
+RUN_TEST(mytest, test_given_liv_returns_54);
+RUN_TEST(mytest, test_given_lxix_returns_69);
+RUN_TEST(mytest, test_given_dxvii_returns_517);
+RUN_TEST(mytest, test_given_mcmxc_returns_1990);
 
 @ @<test...@>+=
 TEST_F(mytest, test_given_i_returns_1)
@@ -189,8 +189,11 @@ TEST_F(mytest, test_given_mcmxc_returns_1990)
 
 
 
-@ @<rout...@>+=
-int handle_roman_ch(char* ch, char* ch2, int* r1 );
+@ Converter.
+@<rout...@>+=
+int get(char ch);
+int comp(char ch, char ch2);
+
 int converter(char* str_in)
 {
     int r = 0;
@@ -199,40 +202,37 @@ int converter(char* str_in)
     char ch = 0;
     char ch2 = 0;
     int sub = 0;     
-    for(;;)
+    for(;;) 
     { 
-        ch = str_in[pos++];
-        ch2 = str_in[pos];
+        @<get current charactor |ch| and it's next |ch2|@>@;
 
-        sub = handle_roman_ch(&ch, &ch2, &r1);
+        @<convert to number |r1| and compare for a sign |sub|@>@; 
 
-        if(sub > 0) 
-            r = r - r1;
-        else 
-            r = r + r1;
-
-        if(ch2 == 0) break;
+        @<calculate the result |r| with sign |sub| @>@;
+       
+        if(ch2 == 0) break; /* end if no more*/
     } 
-   
-   
+
     return r;
-    
-
- }
-
-@ Handle roman charactor except 'i'.
-@<rout...@>+=
-int get(char ch);
-
-int comp(char ch, char ch2);
-int handle_roman_ch(char* ch, char* ch2, int* r1)
-{
-    int sub;
-    *r1 = get(*ch); 
-    sub = comp(*ch, *ch2);
-    return sub;
 }
-@ @<rout...@>+=
+
+@ @<get current charactor |ch| and it's next |ch2|@>=
+ch = str_in[pos++];
+ch2 = str_in[pos];
+
+@ @<convert to number |r1| and compare for a sign |sub|@>= 
+r1 = get(ch); 
+sub = comp(ch, ch2);
+
+@ @<calculate the result |r| with sign |sub| @>=
+if(sub > 0) 
+    r = r - r1;
+else 
+    r = r + r1;
+
+
+@ The two key functions.
+@<rout...@>+=
 int comp(char ch, char ch2)
 {
     int j;
@@ -243,6 +243,7 @@ int comp(char ch, char ch2)
     if(k > j ) return 1;
     return 0; 
 }
+
 int get(char ch)
 {
     char pattern_c[] = {'i', 'v', 'x', 'l', 'c', 'd',  'm'};
@@ -264,3 +265,4 @@ void setup()
 {
 }
 
+@* Index.
