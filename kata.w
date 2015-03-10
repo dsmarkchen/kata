@@ -30,6 +30,7 @@ int main(int argc @, UNUSED, char*  argv[] @, UNUSED)
 {
    @<c harness tests@>@; 
    @<roman number tests@>@;
+   @<isbn 13 tests@>@;
   
    return 0;
 }
@@ -258,6 +259,171 @@ int get(char ch)
     }
     return j;
 }
+
+@ ISBN-13.
+@<isbn 13 tests@>+=
+RUN_TEST(mytest, test_given_9780470059029_returns_1);
+RUN_TEST(mytest, test_given_9780471486480_with_spaces_returns_1);
+RUN_TEST(mytest, test_given_9780262134729_with_hyphens_returns_1);
+RUN_TEST(mytest, test_given_9780470059029x_returns_0);
+RUN_TEST(mytest, test_given_9788889527190_returns_0);
+
+@<isbn 10 tests@>@;
+
+@ @<test...@>+=
+TEST_F(mytest, test_given_9780470059029_returns_1)
+{
+    char* s = "9780470059029";
+    int r = isbn13_check(s);
+    ASSERT_EQ(1, r);
+}
+TEST_F(mytest, test_given_9780471486480_with_spaces_returns_1)
+{
+    char* s = "978 0 471 48648 0";
+    int r = isbn13_check(s);
+    ASSERT_EQ(1, r);
+}
+TEST_F(mytest, test_given_9780262134729_with_hyphens_returns_1)
+{
+    char* s = "978-0-262-13472-9";
+    int r = isbn13_check(s);
+    ASSERT_EQ(1, r);
+}
+
+
+@ Error checking.
+@<test...@>+=
+TEST_F(mytest, test_given_9780470059029x_returns_0)
+{
+    char* s = "9780470059029x";
+    int r = isbn13_check(s);
+    ASSERT_EQ(0, r);
+}
+
+@ Below the test will fail if we check the last digit.
+@<test...@>+=
+TEST_F(mytest, test_given_9788889527190_returns_0)
+{
+    char* s = "9788889527190";
+    int r = isbn13_check(s);
+    ASSERT_EQ(0, r);
+}
+
+
+
+@
+@d ISBN_DATA_LEN 12
+@d ISBN_CHECK_LEN 1
+@d ISBN_LEN (ISBN_DATA_LEN +ISBN_CHECK_LEN)
+
+ @<rout...@>+=
+int isbn13_check(char* s)
+{
+    int ret = 0;
+    int i;
+    int sum = 0;
+    int n = strlen(s);
+    int counter = 0;
+    int x;
+    if(n < ISBN_LEN) return 0;
+    for(i=0;i<n;i++) {
+        if(s[i] == ' ' || s[i] == '-')continue;
+        
+        if(s[i] >= '0' && s[i] <='9') {
+            
+            x = s[i] - '0';
+
+            if(counter < ISBN_DATA_LEN) {
+                sum = sum +(s[i] - '0') * ((counter%2 == 0) ? 1:3) ;
+                counter++;
+                continue;
+            }
+        }
+        if(counter == ISBN_LEN -1) {
+            sum = sum%10;
+            sum = (10 - sum)%10;
+            if(x == sum) {
+              ret = 1;
+            }
+            counter ++;
+            continue;
+        }
+        if (counter >= ISBN_LEN) 
+            ret = 0;
+        
+        return ret; /* invalid charactors return false */
+    }
+     
+
+    return ret;
+}
+
+@ ISBN 10.
+@<isbn 10 tests@>+=
+RUN_TEST(mytest, test_given_0471958697_returns_1);
+RUN_TEST(mytest, test_given_0471606952_with_spaces_returns_1);
+RUN_TEST(mytest, test_given_184146208x_returns_1);
+
+@ @<test...@>+=
+TEST_F(mytest, test_given_0471958697_returns_1)
+{
+    char* s = "0471958697";
+    int r = isbn10_check(s);
+    ASSERT_EQ(1, r);
+}
+
+TEST_F(mytest, test_given_0471606952_with_spaces_returns_1)
+{
+    char* s = "0 471 60695 2";
+    int r = isbn10_check(s);
+    ASSERT_EQ(1, r);
+}
+
+TEST_F(mytest, test_given_184146208x_returns_1)
+{
+    char* s = "184146208x";
+    int r = isbn10_check(s);
+    ASSERT_EQ(1, r);
+}
+
+@ 
+@d ISBN10_DATA_LEN 9
+@<rout...@>+=
+int isbn10_check(char* s)
+{
+    int r = 0;
+    int i;
+    int n = strlen(s);
+    int counter = 0;
+    int sum = 0;
+    for(i=0;i<n;i++) {
+        if(s[i] == ' ' || s[i] == '-')continue;
+        if(s[i] >= '0' && s[i] <='9') {
+
+            if(counter < ISBN10_DATA_LEN) {
+                sum += (counter+1)*(s[i] - '0');
+                counter++;
+                continue;
+            }
+        } 
+
+        if(counter == ISBN10_DATA_LEN) {
+            sum = sum % 11;
+
+            if((s[i]-'0' == sum)||
+                    (s[i] == 'x' && sum == 10)) {
+                r = 1;
+                continue;
+            }
+        }   
+
+        return 0; /* invalid charactors return false */
+    }
+
+    return r;
+}
+
+
 
 @ Harness setup.
 @<rout...@>+= 
