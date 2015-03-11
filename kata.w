@@ -30,7 +30,7 @@ int main(int argc @, UNUSED, char*  argv[] @, UNUSED)
 {
    @<c harness tests@>@; 
    @<roman number tests@>@;
-   @<isbn 13 tests@>@;
+   @<isbn tests@>@;
   
    return 0;
 }
@@ -261,14 +261,13 @@ int get(char ch)
 }
 
 @ ISBN-13.
-@<isbn 13 tests@>+=
+@<isbn tests@>+=
 RUN_TEST(mytest, test_given_9780470059029_returns_1);
 RUN_TEST(mytest, test_given_9780471486480_with_spaces_returns_1);
 RUN_TEST(mytest, test_given_9780262134729_with_hyphens_returns_1);
 RUN_TEST(mytest, test_given_9780470059029x_returns_0);
 RUN_TEST(mytest, test_given_9788889527190_returns_0);
 
-@<isbn 10 tests@>@;
 
 @ @<test...@>+=
 TEST_F(mytest, test_given_9780470059029_returns_1)
@@ -334,35 +333,38 @@ int isbn13_check(char* s)
             x = s[i] - '0';
 
             if(counter < ISBN_DATA_LEN) {
-                sum = sum +(s[i] - '0') * ((counter%2 == 0) ? 1:3) ;
-                counter++;
+                @<handle isbn13 data digit@>@;
                 continue;
             }
         }
         if(counter == ISBN_LEN -1) {
-            sum = sum%10;
-            sum = (10 - sum)%10;
-            if(x == sum) {
-              ret = 1;
-            }
-            counter ++;
+            @<handle isbn13 check digit@>@;
             continue;
         }
-        if (counter >= ISBN_LEN) 
-            ret = 0;
-        
-        return ret; /* invalid charactors return false */
+        return 0; /* invalid charactors or exceed length return false */
     }
-     
 
     return ret;
 }
+@ @<handle isbn13 data digit@>=
+sum = sum +(s[i] - '0') * ((counter%2 == 0) ? 1:3) ;
+counter++;
 
+@ @<handle isbn13 check digit@>=
+sum = sum%10;
+sum = (10 - sum)%10;
+if(x == sum) {
+    ret = 1;
+}
+counter ++;
+       
 @ ISBN 10.
-@<isbn 10 tests@>+=
+@<isbn tests@>+=
 RUN_TEST(mytest, test_given_0471958697_returns_1);
 RUN_TEST(mytest, test_given_0471606952_with_spaces_returns_1);
 RUN_TEST(mytest, test_given_184146208x_returns_1);
+RUN_TEST(mytest, test_given_184146208x0_returns_0);
+RUN_TEST(mytest, test_given_04719586972_returns_0)
 
 @ @<test...@>+=
 TEST_F(mytest, test_given_0471958697_returns_1)
@@ -385,6 +387,18 @@ TEST_F(mytest, test_given_184146208x_returns_1)
     int r = isbn10_check(s);
     ASSERT_EQ(1, r);
 }
+TEST_F(mytest, test_given_184146208x0_returns_0)
+{
+    char* s = "184146208x0";
+    int r = isbn10_check(s);
+    ASSERT_EQ(0, r);
+}
+TEST_F(mytest, test_given_04719586972_returns_0)
+{
+    char* s = "04719586972";
+    int r = isbn10_check(s);
+    ASSERT_EQ(0, r);
+}
 
 @ 
 @d ISBN10_DATA_LEN 9
@@ -401,29 +415,32 @@ int isbn10_check(char* s)
         if(s[i] >= '0' && s[i] <='9') {
 
             if(counter < ISBN10_DATA_LEN) {
-                sum += (counter+1)*(s[i] - '0');
-                counter++;
+                @<handle isbn10 data digit@>@;
                 continue;
             }
         } 
 
         if(counter == ISBN10_DATA_LEN) {
-            sum = sum % 11;
-
-            if((s[i]-'0' == sum)||
-                    (s[i] == 'x' && sum == 10)) {
-                r = 1;
-                continue;
-            }
+            @<handle isbn10 check digit@>@;
         }   
 
-        return 0; /* invalid charactors return false */
+        return 0; /* invalid charactors or exceed length return false */
     }
 
     return r;
 }
 
+@ @<handle isbn10 data digit@>=
+sum += (counter+1)*(s[i] - '0');
+counter++;
+@ @<handle isbn10 check digit@>=
+sum = sum % 11;
 
+if((s[i]-'0' == sum)||
+    (s[i] == 'x' && sum == 10)) {
+   r = 1;
+   continue;
+}
 
 @ Harness setup.
 @<rout...@>+= 
