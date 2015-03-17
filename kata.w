@@ -29,6 +29,7 @@ void setup();
 int main(int argc @, UNUSED, char*  argv[] @, UNUSED)
 {
    @<c harness tests@>@; 
+   @<prime number tests@>@;
    @<roman number tests@>@;
    @<isbn tests@>@;
   
@@ -45,7 +46,176 @@ TEST_F(mytest, simple_test_harness)
    ASSERT_TRUE(1);
    ASSERT_EQ(42, 6*7);
 }
+@ Prime number. Factorize a positive number
+@<prime number tests@>=
+RUN_TEST(mytest, test_given_2_returns_2);
+RUN_TEST(mytest, test_given_3_returns_3);
+RUN_TEST(mytest, test_given_4_returns_2_2);
+RUN_TEST(mytest, test_given_6_returns_2_3);
+RUN_TEST(mytest, test_given_12_returns_2_2_3);
+RUN_TEST(mytest, test_given_15_returns_3_5);
 
+RUN_TEST(mytest, test_given_21_returns_3_7);
+RUN_TEST(mytest, test_given_35_returns_5_7);
+
+RUN_TEST(mytest, test_given_147_returns_3_7_7);
+
+@ 
+@d MAX_PRIME_NUM 100
+@<test...@>+=
+TEST_F(mytest, test_given_2_returns_2)
+{
+    int d = 2;
+    int d_out[MAX_PRIME_NUM];
+    int c = fact_prime(d, d_out);
+    ASSERT_EQ(1, c);
+    ASSERT_EQ(2, d_out[0]);
+
+}
+TEST_F(mytest, test_given_3_returns_3)
+{
+    int d = 3;
+    int d_out[MAX_PRIME_NUM];
+    int c = fact_prime(d, d_out);
+    ASSERT_EQ(1, c);
+    ASSERT_EQ(3, d_out[0]);
+
+}
+TEST_F(mytest, test_given_4_returns_2_2)
+{
+    int d = 4;
+    int d_out[MAX_PRIME_NUM];
+    int c = fact_prime(d, d_out);
+    ASSERT_EQ(2, c);
+    ASSERT_EQ(2, d_out[0]);
+    ASSERT_EQ(2, d_out[1]);
+
+}
+TEST_F(mytest, test_given_6_returns_2_3)
+{
+    int d = 6;
+    int d_out[MAX_PRIME_NUM];
+    int c = fact_prime(d, d_out);
+    ASSERT_EQ(2, c);
+    ASSERT_EQ(2, d_out[0]);
+    ASSERT_EQ(3, d_out[1]);
+
+}
+
+TEST_F(mytest, test_given_12_returns_2_2_3)
+{
+    int d = 12;
+    int d_out[MAX_PRIME_NUM];
+    int c = fact_prime(d, d_out);
+    ASSERT_EQ(3, c);
+    ASSERT_EQ(2, d_out[0]);
+    ASSERT_EQ(2, d_out[1]);
+    ASSERT_EQ(3, d_out[2]);
+
+}
+
+TEST_F(mytest, test_given_15_returns_3_5)
+{
+    int d = 15;
+    int d_out[MAX_PRIME_NUM];
+    int c = fact_prime(d, d_out);
+    ASSERT_EQ(2, c);
+    ASSERT_EQ(3, d_out[0]);
+    ASSERT_EQ(5, d_out[1]);
+
+}
+
+@
+@<test...@>+=
+TEST_F(mytest, test_given_21_returns_3_7)
+{
+    int d = 21;
+    int d_out[MAX_PRIME_NUM];
+    int c = fact_prime(d, d_out);
+    ASSERT_EQ(2, c);
+    ASSERT_EQ(3, d_out[0]);
+    ASSERT_EQ(7, d_out[1]);
+}
+TEST_F(mytest, test_given_35_returns_5_7)
+{
+    int c = 0;
+    int d = 35;
+    int d_out[MAX_PRIME_NUM];
+   
+    int x2 = is_prime(2);
+    int x3 = is_prime(3);
+    int x5 = is_prime(5);
+    int x7 = is_prime(7);
+    int x9 = is_prime(9);
+    int x35 = is_prime(35);
+
+    ASSERT_EQ(1, x2);
+    ASSERT_EQ(1, x3);
+    ASSERT_EQ(1, x5);
+    ASSERT_EQ(1, x7);
+    ASSERT_EQ(0, x9);
+    ASSERT_EQ(0, x35);
+
+    c = fact_prime(d, d_out);
+    printf ("___%d___\n", c);
+    ASSERT_EQ(2, c);
+    ASSERT_EQ(5, d_out[0]);
+    ASSERT_EQ(7, d_out[1]);
+}
+
+TEST_F(mytest, test_given_147_returns_3_7_7)
+{
+    int d = 147;
+    int d_out[MAX_PRIME_NUM];
+    int c = fact_prime(d, d_out);
+    printf ("___%d___\n", c);
+    ASSERT_EQ(3, c);
+    ASSERT_EQ(3, d_out[0]);
+    ASSERT_EQ(7, d_out[1]);
+    ASSERT_EQ(7, d_out[2]);
+
+}
+
+
+
+@ 
+@<rout...@>+=
+int is_prime(int d);
+int fact_prime(int d, int* d_out)
+{
+    int pos = 0;
+    int dd = d/2+1; /* the maximum of prime numbers it could be */
+
+    int t = 2;
+    int r[MAX_PRIME_NUM];
+    int tpos=0;
+    int j =0;
+    if (dd < 3) dd = 3;
+    /* get all prime numbers */
+    for(t=2;t<=dd;t++) {
+        if(is_prime(t)) r[tpos++] = t;
+    }
+
+    for(j=0;j<tpos;) {
+        if(d % r[j] == 0) {
+            d_out[pos++] = r[j];
+            d = d/r[j];
+            continue;
+        }
+        j++;
+    }
+  
+    return pos;
+}
+int is_prime(int d)
+{
+    int dd = d/2+1; /* the maximum of prime numbers it could be */
+    int i;
+    for(i = 2; i< dd; i++) {
+        if(d % i == 0) return 0;
+    }
+    return 1;
+}
 
 @ Roman numbers 
 @<roman number tests@>+=
