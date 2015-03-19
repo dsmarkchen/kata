@@ -3,6 +3,7 @@ Below is the overall structure of the code.
 @c
 @<macro definitions@>@;
 @<includes@>@;
+@<type definitions@>@;
 @<routines@>@;
 @<tests@>@;
 @<main@>@;
@@ -29,6 +30,7 @@ void setup();
 int main(int argc @, UNUSED, char*  argv[] @, UNUSED)
 {
    @<c harness tests@>@; 
+   @<yatzy tests@>@;
    @<prime number tests@>@;
    @<roman number tests@>@;
    @<isbn tests@>@;
@@ -46,7 +48,228 @@ TEST_F(mytest, simple_test_harness)
    ASSERT_TRUE(1);
    ASSERT_EQ(42, 6*7);
 }
-@ Prime number. Factorize a positive number
+@* Yatzy.
+@<type...@>+=
+typedef enum {
+    chance, yatzy, ones, twos, threes,fours,fives, sixes, pair, two_pairs
+} yatzy_category_t;
+
+int yatzy_score(yatzy_category_t cat, int* data);
+
+@ @<yatzy tests@>=
+RUN_TEST(mytest, test_chance_1_1_3_3_6_returns_14);
+
+RUN_TEST(mytest, test_yatzy_1_1_1_1_1_returns_50);
+RUN_TEST(mytest, test_yatzy_1_1_1_2_1_returns_0);
+
+RUN_TEST(mytest, test_fours_1_1_2_4_4_returns_8);
+RUN_TEST(mytest, test_ones_3_3_3_4_5_returns_0);
+
+RUN_TEST(mytest, test_pair_3_3_3_4_4_returns_8);
+RUN_TEST(mytest, test_pair_1_1_6_2_6_returns_12);
+RUN_TEST(mytest, test_pair_3_3_3_4_1_returns_0);
+
+
+RUN_TEST(mytest, test_twopairs_1_1_2_3_3_returns_8);
+RUN_TEST(mytest, test_twopairs_1_1_2_2_2_returns_0);
+
+@ @<test...@>=
+
+TEST_F(mytest, test_chance_1_1_3_3_6_returns_14)
+{
+    int expected_i = 14;
+    int d[5] = {1,1,3,3,6};
+    int r = yatzy_score(chance, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_yatzy_1_1_1_1_1_returns_50)
+{
+    int expected_i = 50;
+    int d[5] = {1,1,1,1,1};
+    int r = yatzy_score(yatzy, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_yatzy_1_1_1_2_1_returns_0)
+{
+    int expected_i = 0;
+    int d[5] = {1,1,1,2,1};
+    int r = yatzy_score(yatzy, d);
+    ASSERT_EQ(expected_i, r);
+}
+
+TEST_F(mytest, test_fours_1_1_2_4_4_returns_8)
+{
+    int expected_i = 8;
+    int d[5] = {1,1,2,4,4};
+    int r = yatzy_score(fours, d);
+    ASSERT_EQ(expected_i, r);
+}
+
+TEST_F(mytest, test_ones_3_3_3_4_5_returns_0)
+{
+    int expected_i = 0;
+    int d[5] = {3,3,3,4,5};
+    int r = yatzy_score(ones, d);
+    ASSERT_EQ(expected_i, r);
+}
+
+TEST_F(mytest, test_pair_3_3_3_4_4_returns_8)
+{
+
+    int expected_i = 8;
+    int d[5] = {3,3,3,4,4};
+    int r = yatzy_score(pair, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_pair_1_1_6_2_6_returns_12)
+{
+
+    int expected_i = 12;
+    int d[5] = {1,1,6,2,6};
+    int r = yatzy_score(pair, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_pair_3_3_3_4_1_returns_0)
+{
+
+    int expected_i = 0;
+    int d[5] = {3,3,3,4,1};
+    int r = yatzy_score(pair, d);
+    ASSERT_EQ(expected_i, r);
+}
+
+TEST_F(mytest, test_twopairs_1_1_2_3_3_returns_8)
+{
+
+    int expected_i = 8;
+    int d[5] = {1,1,2,3,3};
+    int r = yatzy_score(two_pairs, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_twopairs_1_1_2_2_2_returns_0)
+{
+
+    int expected_i = 0;
+    int d[5] = {1,1,2,2,2};
+    int r = yatzy_score(two_pairs, d);
+    ASSERT_EQ(expected_i, r);
+}
+
+@ @<rout...@>+=
+int yatzy_score(yatzy_category_t cat, int* data)
+{
+    int i;
+    int r = 0;
+    int p1 = 0; /*pair of 1*/
+    int p2 = 0; /*pair of 2*/
+    int p3 = 0; /*pair of 3*/
+    int p4 = 0;
+    int p5 = 0;
+    int p6 = 0; /*pair of 6*/
+    int pair_count = 0;
+    if(data == 0) return 0;
+    if(cat == chance) {
+        for(i =0 ;i<5;i++) {
+            r = r + data[i];
+        }
+    }
+    if (cat == yatzy) {
+
+        if(data[0] == data[1] &&
+                data[1] == data[2] &&
+                data[2] == data[3] &&
+                data[3] == data[4])
+            r = 50; 
+    }
+    if (cat == pair) {
+        p1 = find_pair(1, data);      
+        p2 = find_pair(2, data);      
+        p3 = find_pair(3, data);      
+        p4 = find_pair(4, data);      
+        p5 = find_pair(5, data);      
+        p6 = find_pair(6, data);      
+        if (p1 > 0) r = 2;
+        if (p2 > 0) r = 4;
+        if (p3 > 0) r = 6;
+        if (p4 > 0) r = 8;
+        if (p5 > 0) r = 10;
+        if (p6 > 0) r = 12;
+    }
+    if (cat == two_pairs) {
+        p1 = find_pair(1, data);      
+        p2 = find_pair(2, data);      
+        p3 = find_pair(3, data);      
+        p4 = find_pair(4, data);      
+        p5 = find_pair(5, data);      
+        p6 = find_pair(6, data);      
+        if (p1 > 0) {r = 2; pair_count++;}
+        if (p2 > 0) {r += 4;pair_count++;}
+        if (p3 > 0) {r += 6;pair_count++;}
+        if (p4 > 0) {r += 8;pair_count++;}
+        if (p5 > 0) {r += 10;pair_count++;}
+        if (p6 > 0) {r += 12;pair_count++;}
+        if(pair_count != 2) r = 0;
+    }
+    @<scrore on ones,twos,threes, to sixes@>@;
+    return r;
+}
+@ @<rout...@>+=
+int find_pair(int r0, int* data)
+{
+    int i;
+    int count = 0; 
+    for(i=0; i< 5;i++) {
+       if(r0 == data[i]) {
+            count ++;
+        } 
+    }
+    if(count == 2) return 1;
+    return 0;
+  
+}
+@ @<type...@>+=
+int find_pair(int r0, int* data);
+
+
+@ @<scrore on ones,twos,threes, to sixes@>=
+if (cat == ones) {
+    for(i = 0; i< 5;i++) {
+        if(data[i] == 1) r  = r +1;
+    }
+}
+if (cat == twos) {
+    for(i = 0; i< 5;i++) {
+        if(data[i] == 2) r  = r +2;
+    }
+}
+
+if (cat == threes) {
+    for(i = 0; i< 5;i++) {
+        if(data[i] == 3) r  = r +3;
+    }
+}
+
+if (cat == fours) {
+    for(i = 0; i< 5;i++) {
+        if(data[i] == 4) r  = r +4;
+    }
+}
+
+if (cat == fives) {
+    for(i = 0; i< 5;i++) {
+        if(data[i] == 5) r  = r +5;
+    }
+}
+
+
+if (cat == sixes) {
+    for(i = 0; i< 5;i++) {
+        if(data[i] == 6) r  = r +6;
+    }
+}
+
+
+@* Prime number. Factorize a positive number
 @<prime number tests@>=
 RUN_TEST(mytest, test_given_2_returns_2);
 RUN_TEST(mytest, test_given_3_returns_3);
@@ -157,7 +380,6 @@ TEST_F(mytest, test_given_35_returns_5_7)
     ASSERT_EQ(0, x35);
 
     c = fact_prime(d, d_out);
-    printf ("___%d___\n", c);
     ASSERT_EQ(2, c);
     ASSERT_EQ(5, d_out[0]);
     ASSERT_EQ(7, d_out[1]);
@@ -168,7 +390,6 @@ TEST_F(mytest, test_given_147_returns_3_7_7)
     int d = 147;
     int d_out[MAX_PRIME_NUM];
     int c = fact_prime(d, d_out);
-    printf ("___%d___\n", c);
     ASSERT_EQ(3, c);
     ASSERT_EQ(3, d_out[0]);
     ASSERT_EQ(7, d_out[1]);
