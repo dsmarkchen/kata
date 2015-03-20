@@ -48,10 +48,16 @@ TEST_F(mytest, simple_test_harness)
    ASSERT_TRUE(1);
    ASSERT_EQ(42, 6*7);
 }
+
 @* Yatzy.
 @<type...@>+=
 typedef enum {
-    chance, yatzy, ones, twos, threes,fours,fives, sixes, pair, two_pairs
+    chance, yatzy,                          @/
+    ones, twos, threes,fours,fives, sixes,  @/
+    pair, two_pairs,                        @/
+    three_of_kind, four_of_kind,            @/ 
+    small_straight, large_straight,
+    full_house
 } yatzy_category_t;
 
 int yatzy_score(yatzy_category_t cat, int* data);
@@ -72,6 +78,7 @@ RUN_TEST(mytest, test_pair_3_3_3_4_1_returns_0);
 
 RUN_TEST(mytest, test_twopairs_1_1_2_3_3_returns_8);
 RUN_TEST(mytest, test_twopairs_1_1_2_2_2_returns_0);
+
 
 @ @<test...@>=
 
@@ -155,6 +162,38 @@ TEST_F(mytest, test_twopairs_1_1_2_2_2_returns_0)
     ASSERT_EQ(expected_i, r);
 }
 
+@ @<yatzy tests@>+=
+RUN_TEST(mytest, test_threekind_3_3_3_4_5_returns_9);
+RUN_TEST(mytest, test_threekind_3_3_4_5_6_returns_0);
+RUN_TEST(mytest, test_threekind_3_3_3_3_1_returns_0);
+@ @<test...@>+=
+TEST_F(mytest, test_threekind_3_3_3_4_5_returns_9)
+{
+
+    int expected_i = 9;
+    int d[5] = {3,3,3,4,5};
+    int r = yatzy_score(three_of_kind, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_threekind_3_3_4_5_6_returns_0)
+{
+
+    int expected_i = 0;
+    int d[5] = {3,3,4,5,6};
+    int r = yatzy_score(three_of_kind, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_threekind_3_3_3_3_1_returns_0)
+{
+
+    int expected_i = 0;
+    int d[5] = {3,3,3,3,1};
+    int r = yatzy_score(three_of_kind, d);
+    ASSERT_EQ(expected_i, r);
+}
+
+
+
 @ @<rout...@>+=
 int yatzy_score(yatzy_category_t cat, int* data)
 {
@@ -167,6 +206,8 @@ int yatzy_score(yatzy_category_t cat, int* data)
     int p5 = 0;
     int p6 = 0; /*pair of 6*/
     int pair_count = 0;
+    @<declare three kind variables@>@;
+    @<declare four kind variables@>@;
     if(data == 0) return 0;
     if(cat == chance) {
         for(i =0 ;i<5;i++) {
@@ -174,43 +215,35 @@ int yatzy_score(yatzy_category_t cat, int* data)
         }
     }
     if (cat == yatzy) {
-
         if(data[0] == data[1] &&
                 data[1] == data[2] &&
                 data[2] == data[3] &&
                 data[3] == data[4])
             r = 50; 
     }
-    if (cat == pair) {
-        p1 = find_pair(1, data);      
-        p2 = find_pair(2, data);      
-        p3 = find_pair(3, data);      
-        p4 = find_pair(4, data);      
-        p5 = find_pair(5, data);      
-        p6 = find_pair(6, data);      
-        if (p1 > 0) r = 2;
-        if (p2 > 0) r = 4;
-        if (p3 > 0) r = 6;
-        if (p4 > 0) r = 8;
-        if (p5 > 0) r = 10;
-        if (p6 > 0) r = 12;
-    }
-    if (cat == two_pairs) {
-        p1 = find_pair(1, data);      
-        p2 = find_pair(2, data);      
-        p3 = find_pair(3, data);      
-        p4 = find_pair(4, data);      
-        p5 = find_pair(5, data);      
-        p6 = find_pair(6, data);      
-        if (p1 > 0) {r = 2; pair_count++;}
-        if (p2 > 0) {r += 4;pair_count++;}
-        if (p3 > 0) {r += 6;pair_count++;}
-        if (p4 > 0) {r += 8;pair_count++;}
-        if (p5 > 0) {r += 10;pair_count++;}
-        if (p6 > 0) {r += 12;pair_count++;}
-        if(pair_count != 2) r = 0;
-    }
     @<scrore on ones,twos,threes, to sixes@>@;
+    @<score on pair@>@;
+    @<score on two pairs@>@;
+    @<score on three of a kind@>@;
+    @<score on four of a kind@>@;
+    if (cat == small_straight) {
+        if(data[0] == 1 &&
+                data[1] == 2 &&
+                data[2] == 3 &&
+                data[3] == 4 &&
+                data[4] == 5) r = 15;
+    }
+    if (cat == large_straight) {
+        if(data[0] == 2 &&
+                data[1] == 3 &&
+                data[2] == 4 &&
+                data[3] == 5 &&
+                data[4] == 6) r = 20;
+    }
+    if (cat == full_house) {
+        r = score_full_house(data);
+    }
+
     return r;
 }
 @ @<rout...@>+=
@@ -267,6 +300,208 @@ if (cat == sixes) {
         if(data[i] == 6) r  = r +6;
     }
 }
+
+@ @<score on pair@>=
+if (cat == pair) {
+    p1 = find_pair(1, data);      
+    p2 = find_pair(2, data);      
+    p3 = find_pair(3, data);      
+    p4 = find_pair(4, data);      
+    p5 = find_pair(5, data);      
+    p6 = find_pair(6, data);      
+    if (p1 > 0) r = 2;
+    if (p2 > 0) r = 4;
+    if (p3 > 0) r = 6;
+    if (p4 > 0) r = 8;
+    if (p5 > 0) r = 10;
+    if (p6 > 0) r = 12;
+}
+ 
+@ @<score on two pairs@>=
+if (cat == two_pairs) {
+    p1 = find_pair(1, data);      
+    p2 = find_pair(2, data);      
+    p3 = find_pair(3, data);      
+    p4 = find_pair(4, data);      
+    p5 = find_pair(5, data);      
+    p6 = find_pair(6, data);      
+    if (p1 > 0) {r = 2; pair_count++;}
+    if (p2 > 0) {r += 4;pair_count++;}
+    if (p3 > 0) {r += 6;pair_count++;}
+    if (p4 > 0) {r += 8;pair_count++;}
+    if (p5 > 0) {r += 10;pair_count++;}
+    if (p6 > 0) {r += 12;pair_count++;}
+    if(pair_count != 2) r = 0;
+}
+  
+@ @<score on three of a kind@>=
+if (cat == three_of_kind) {
+   t1= find_three(1, data);
+   t2= find_three(2, data);
+   t3= find_three(3, data);
+   t4= find_three(4, data);
+   t5= find_three(5, data);
+   t6= find_three(6, data);
+    if (t1 > 0) r = 3;
+    if (t2 > 0) r = 6;
+    if (t3 > 0) r = 9;
+    if (t4 > 0) r = 12;
+    if (t5 > 0) r = 15;
+    if (t6 > 0) r = 18;
+}
+
+
+@ @<declare three kind variables@>=
+int t1,t2,t3,t4,t5,t6;
+@ @<type...@>+=
+int find_three(int r0, int* data);
+
+@ @<rout...@>+=
+int find_three(int r0, int* data)
+{
+    int i;
+    int count = 0; 
+    for(i=0; i< 5;i++) {
+       if(r0 == data[i]) {
+            count ++;
+        } 
+    }
+    if(count == 3) return 1;
+    return 0;
+
+}
+@ @<score on four of a kind@>=
+if (cat == four_of_kind) {
+   f1= find_four(1, data);
+   f2= find_four(2, data);
+   f3= find_four(3, data);
+   f4= find_four(4, data);
+   f5= find_four(5, data);
+   f6= find_four(6, data);
+    if (f1 > 0) r = 4;
+    if (f2 > 0) r = 8;
+    if (f3 > 0) r = 12;
+    if (f4 > 0) r = 16;
+    if (f5 > 0) r = 20;
+    if (f6 > 0) r = 24;
+}
+
+@ @<declare four kind variables@>=
+int f1,f2,f3,f4,f5,f6;
+
+@ @<type...@>+=
+int find_four(int r0, int* data);
+
+@ @<rout...@>+=
+int find_four(int r0, int* data)
+{
+    int i;
+    int count = 0; 
+    for(i=0; i< 5;i++) {
+       if(r0 == data[i]) {
+            count ++;
+        } 
+    }
+    if(count == 4) return 1;
+    return 0;
+
+}
+@ @<yatzy tests@>+=
+RUN_TEST(mytest, test_fourkind_2_2_2_2_5_returns_8);
+RUN_TEST(mytest, test_fourkind_2_2_2_5_5_returns_0);
+RUN_TEST(mytest, test_fourkind_2_2_2_2_2_returns_0);
+@ @<test...@>+=
+TEST_F(mytest, test_fourkind_2_2_2_2_5_returns_8)
+{
+
+    int expected_i = 8;
+    int d[5] = {2,2,2,2,5};
+    int r = yatzy_score(four_of_kind, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_fourkind_2_2_2_5_5_returns_0)
+{
+
+    int expected_i = 0;
+    int d[5] = {2,2,2,5,5};
+    int r = yatzy_score(four_of_kind, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_fourkind_2_2_2_2_2_returns_0)
+{
+
+    int expected_i = 0;
+    int d[5] = {2,2,2,2,2};
+    int r = yatzy_score(four_of_kind, d);
+    ASSERT_EQ(expected_i, r);
+}
+
+
+@ @<rout...@>+=
+int score_full_house(int* data)
+{
+    int i;
+    int fh1, fh2;  /* the two number of full house*/
+    int fh1_c, fh2_c; /* the counter of full house */
+    fh1_c = fh2_c = 0;
+    fh2 =0;
+    fh1 = data[0]; fh1_c = 1;
+    for(i=1; i< 5;i++) {
+        if((fh2 == 0) && (data[i] != fh1)) {
+            fh2 = data[i];
+            fh2_c ++;
+            continue;
+        }
+        if(data[i] == fh1) {
+            fh1_c ++;
+            continue;
+        }
+        if(data[i] == fh2) {
+            fh2_c ++;
+            continue;
+        }
+    }
+    if((fh1_c == 2 && fh2_c==3) ||
+       (fh1_c == 3 && fh2_c==2 )) {
+        return data[0] + data[1] + data[2] + data[3]+data[4];
+    }
+    return 0;
+}
+
+@ @<type...@>+=
+int score_full_house(int* data);
+
+@ @<yatzy tests@>+=
+RUN_TEST(mytest, test_fullhouse_1_1_2_2_2_returns_8);
+RUN_TEST(mytest, test_fullhouse_2_2_3_3_4_returns_0);
+RUN_TEST(mytest, test_fullhouse_4_4_4_4_4_returns_0);
+
+@ @<test...@>+=
+TEST_F(mytest, test_fullhouse_1_1_2_2_2_returns_8)
+{
+
+    int expected_i = 8;
+    int d[5] = {1,1,2,2,2};
+    int r = yatzy_score(full_house, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_fullhouse_2_2_3_3_4_returns_0)
+{
+
+    int expected_i = 0;
+    int d[5] = {2,2,3,3,4};
+    int r = yatzy_score(full_house, d);
+    ASSERT_EQ(expected_i, r);
+}
+TEST_F(mytest, test_fullhouse_4_4_4_4_4_returns_0)
+{
+
+    int expected_i = 0;
+    int d[5] = {4,4,4,4,4};
+    int r = yatzy_score(full_house, d);
+    ASSERT_EQ(expected_i, r);
+}
+
 
 
 @* Prime number. Factorize a positive number
